@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ENIGMA SUIT + SCT</title>
+<meta name="theme-color" content="#14324a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<header>
+  <div class="brand">
+    <img src="icons/icon-192.png" alt="" width="28" height="28">
+    <div>
+      <strong>ENIGMA SUIT + SCT</strong>
+      <span class="sub">cerebelo (SUITPy) e medula cervical (Spinal Cord Toolbox)</span>
+    </div>
+  </div>
+  <div id="projInfo" class="proj">Nenhum projeto aberto</div>
+</header>
+
+<nav id="tabs">
+  <button data-tab="projeto" class="active">1. Projeto</button>
+  <button data-tab="discos">2. Discos C2–C4</button>
+  <button data-tab="revisao">3. Revisão de máscaras</button>
+  <button data-tab="resultados">4. Resultados</button>
+  <button data-tab="ajuda">Instalação e uso</button>
+</nav>
+
+<main>
+<!-- ======================================================== PROJETO -->
+<section id="tab-projeto" class="tab active">
+  <div class="card">
+    <h2>Pasta do projeto</h2>
+    <p>A pasta deve ter uma subpasta <code>input/</code> com os exames no padrão do ENIGMA:
+      <code>&lt;sujeito&gt;_t1.nii.gz</code>, opcionalmente <code>&lt;sujeito&gt;_t2.nii.gz</code> e
+      <code>&lt;sujeito&gt;_ceresmask.nii.gz</code> (máscara externa do cerebelo).
+      O pipeline grava os resultados em <code>deriv/</code>.</p>
+    <div class="row">
+      <button id="btnPick" class="primary">Abrir pasta do projeto</button>
+      <button id="btnPerm" class="hidden">Autorizar acesso à pasta</button>
+      <label class="filebtn" id="roPicker">Abrir só para leitura
+        <input type="file" id="dirInput" webkitdirectory multiple hidden></label>
+    </div>
+    <p id="fsNote" class="note"></p>
+  </div>
+
+  <div class="card">
+    <h2>Sujeitos</h2>
+    <p class="note">Centro e grupo entram no config.json e nas tabelas de resultado. A covariância
+      espacial (CQ) é calculada separadamente para cada centro.</p>
+    <div class="row">
+      <label>Grupo para todos os selecionados
+        <select id="bulkGroup"><option value="">—</option><option>FRDA</option><option>CONT</option></select></label>
+      <label>Centro para todos <input id="bulkSite" placeholder="ex.: Brasilia"></label>
+      <button id="btnBulk">Aplicar</button>
+    </div>
+    <div class="tablewrap"><table id="subjTable"><thead><tr>
+      <th><input type="checkbox" id="selAll"></th><th>Sujeito</th><th>T1</th><th>T2</th><th>Máscara externa</th>
+      <th>Centro</th><th>Grupo</th><th>Discos</th></tr></thead><tbody></tbody></table></div>
+  </div>
+
+  <div class="card">
+    <h2>Parâmetros</h2>
+    <div class="grid2">
+      <fieldset><legend>SUIT (cerebelo)</legend>
+        <label><input type="checkbox" id="suitOn" checked> processar o cerebelo</label>
+        <label><input type="checkbox" id="useT2" checked> usar T2 quando houver</label>
+        <label>Máscara externa (CERES etc.)
+          <select id="extMask"><option value="auto">usar quando houver</option><option value="off">não usar</option></select></label>
+        <label>Segmentação de tecidos
+          <select id="tissueSeg">
+            <option value="atropos_brain">Atropos — encéfalo inteiro (padrão)</option>
+            <option value="atropos_cerebellum">Atropos — só região do cerebelo</option>
+            <option value="external">Mapas próprios (&lt;sujeito&gt;_gm / _wm em input/)</option>
+          </select></label>
+        <label>Template
+          <select id="space"><option value="SUIT">SUIT</option><option value="MNI">MNI152NLin6AsymC</option>
+          <option value="MNISym">MNI152NLin2009cSymC</option></select></label>
+        <label>Suavização (FWHM, mm) <input id="fwhm" type="number" value="3" min="0" step="0.5"></label>
+      </fieldset>
+      <fieldset><legend>Spinal Cord Toolbox (medula)</legend>
+        <label><input type="checkbox" id="sctOn" checked> processar a medula</label>
+        <label>Segmentação
+          <select id="segEngine">
+            <option value="deepseg_sc">sct_deepseg_sc -c t1 (comando do ENIGMA)</option>
+            <option value="deepseg">sct_deepseg spinalcord (modelo atual do SCT)</option>
+          </select></label>
+        <label>Níveis vertebrais
+          <select id="vert"><option value="1:4">C1–C4 (artigo Rezende 2023)</option>
+          <option value="2:3">C2–C3 (script do repositório)</option></select></label>
+        <label>Ambiente Python (para o script)
+          <input id="venv" value="$HOME/enigma-env"></label>
+      </fieldset>
+    </div>
+    <div class="row">
+      <button id="btnSaveCfg" class="primary">Salvar config.json e run_enigma.sh</button>
+      <span id="cfgMsg" class="note"></span>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================== DISCOS -->
+<section id="tab-discos" class="tab">
+  <div class="split">
+    <aside class="card side">
+      <h3>Sujeitos</h3>
+      <ul id="discList" class="slist"></ul>
+    </aside>
+    <div class="card viewerCard">
+      <div class="toolbar">
+        <span>Marcar:</span>
+        <button class="lab active" data-v="3">3 · disco C2/C3</button>
+        <button class="lab" data-v="4">4 · disco C3/C4</button>
+        <button id="discClear">Apagar marcações</button>
+        <span class="sep"></span>
+        <label>Vista <select id="discView"><option value="sag">sagital</option><option value="cor">coronal</option><option value="ax">axial</option></select></label>
+        <input type="range" id="discSlice" min="0" max="0" value="0">
+        <label>Contraste <input type="range" id="discWin" min="10" max="300" value="100"></label>
+      </div>
+      <p class="note">Clique na <b>ponta posterior</b> de cada disco intervertebral (mesma regra do
+        manual do ENIGMA: rótulo 3 = C2/C3, rótulo 4 = C3/C4). Roda do mouse troca a fatia;
+        Ctrl/⌘ + roda dá zoom. As marcações são salvas em <code>disc_labels.json</code>.</p>
+      <canvas id="discCanvas" class="viewer"></canvas>
+      <div id="discInfo" class="note"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================== REVISÃO -->
+<section id="tab-revisao" class="tab">
+  <div class="split">
+    <aside class="card side">
+      <label>Máscara
+        <select id="revKind">
+          <option value="pcereb">Cerebelo — &lt;sujeito&gt;_t1_pcereb (SUIT)</option>
+          <option value="dseg">Cerebelo — saída do SUITPy (dseg)</option>
+          <option value="sctseg">Medula — &lt;sujeito&gt;_t1_seg (SCT)</option>
+        </select></label>
+      <ul id="revList" class="slist"></ul>
+    </aside>
+    <div class="card viewerCard">
+      <div class="toolbar">
+        <button class="tool active" data-mode="none">Navegar</button>
+        <button class="tool" data-mode="erase">Borracha</button>
+        <button class="tool" data-mode="brush">Pincel</button>
+        <label>Raio <input type="number" id="revRadius" value="2" min="0" max="15" style="width:4em"></label>
+        <label><input type="checkbox" id="rev3d"> 3D</label>
+        <button id="revUndo">Desfazer</button>
+        <span class="sep"></span>
+        <label>Vista <select id="revView"><option value="sag">sagital</option><option value="cor" selected>coronal</option><option value="ax">axial</option></select></label>
+        <input type="range" id="revSlice" min="0" max="0" value="0">
+        <label>Opacidade <input type="range" id="revAlpha" min="0" max="100" value="45"></label>
+      </div>
+      <div class="toolbar">
+        <button id="revSave" class="primary">Salvar máscara editada</button>
+        <button data-dec="aprovado" class="dec">Aprovar</button>
+        <button data-dec="excluir" class="dec">Excluir sujeito</button>
+        <input id="revNote" placeholder="observação (opcional)">
+        <span id="revMsg" class="note"></span>
+      </div>
+      <canvas id="revCanvas" class="viewer"></canvas>
+      <p class="note">Protocolo do ENIGMA: apagar inclusões do seio transverso e de tecido fora do cerebelo;
+        o tronco encefálico não precisa ser corrigido. Ao salvar, o original vai para
+        <code>*_orig.nii.gz</code>. Depois de editar, rode a etapa 2 do script (ele continua a partir da
+        normalização/registro).</p>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================== RESULTADOS -->
+<section id="tab-resultados" class="tab">
+  <div class="card">
+    <div class="row">
+      <button id="btnLoadRes" class="primary">Ler deriv/results/results.json</button>
+      <label class="filebtn">ou escolher arquivo<input type="file" id="resFile" accept=".json" hidden></label>
+      <span id="resMsg" class="note"></span>
+    </div>
+  </div>
+  <div class="card"><h2>Andamento por sujeito</h2><div class="tablewrap" id="resStatus"></div></div>
+  <div class="card"><h2>Medula cervical (SCT)</h2>
+    <p class="note">Área de secção transversal (mm²) e excentricidade por nível, média dos cortes do nível.
+      d de Cohen sem ajuste por covariáveis (o artigo ajustou por idade, sexo e centro).</p>
+    <div id="resSct"></div></div>
+  <div class="card"><h2>Covariância espacial (CQ das imagens SUIT)</h2><div id="resQc"></div></div>
+  <div class="card"><h2>Cerebelo (SUIT) por região</h2>
+    <div class="row"><label>Tecido <select id="roiTissue"><option>GM</option><option>WM</option></select></label>
+      <label>Medida <select id="roiMeasure"><option value="volume_ml">volume (mL)</option><option value="mean">média do voxel</option></select></label></div>
+    <div id="resRoi"></div></div>
+</section>
+
+<!-- ======================================================== AJUDA -->
+<section id="tab-ajuda" class="tab">
+  <div class="card prose" id="helpText"></div>
+</section>
+</main>
+
+<div id="toast"></div>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

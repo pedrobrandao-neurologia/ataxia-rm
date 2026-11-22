@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "enigma-pipeline"
+version = "0.1.0"
+description = "Pipeline ENIGMA-Ataxia (SUIT via SUITPy + Spinal Cord Toolbox) em Python"
+requires-python = ">=3.10"
+dependencies = [
+  "SUITPy>=2.1",
+  "antspyx>=0.6.3",
+  "nibabel>=5",
+  "numpy>=1.24",
+  "scipy>=1.10",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.scripts]
+enigma-pipeline = "enigma_pipeline.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["enigma_pipeline*"]
