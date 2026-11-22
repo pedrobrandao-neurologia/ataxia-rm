@@ -20,6 +20,7 @@ python/enigma_pipeline/
   qc.py       covariância espacial (tradução do cg_check_cov.m)
   results.py  atlas SUIT por região + tabelas + results.json
   cli.py      comando enigma-pipeline
+  dicom.py    comando enigma-dicom (DICOM -> input/ no padrão ENIGMA)
 python/tests/ testes com dados sintéticos
 pwa/          app (GitHub Pages via .github/workflows/pages.yml)
 ```
@@ -52,6 +53,21 @@ pwa/          app (GitHub Pages via .github/workflows/pages.yml)
   próprios (`tissue_seg: "external"`).
 - O SCT instalado hoje (7.x) é mais novo que o 4.2.2 do artigo; `sct_deepseg_sc` está marcado como obsoleto.
 - Volume intracraniano não é calculado.
+
+## Conversão DICOM -> padrão ENIGMA
+
+```bash
+enigma-dicom scan    --dicom PASTA_COM_UMA_SUBPASTA_POR_PACIENTE --out PASTA_DO_PROJETO
+#   -> PASTA_DO_PROJETO/series_inventory.csv (todas as séries, papel sugerido e motivo)
+#   conferir/editar a coluna role (t1, t2 ou vazio)
+enigma-dicom convert --out PASTA_DO_PROJETO
+#   -> input/<sujeito>_t1.nii.gz, input/<sujeito>_t2.nii.gz, deriv/, conversion_report.csv
+```
+
+Regra da sugestão: T1 = 3D, voxel ≤ 1,2 mm, não derivada, descrição com t1/mprage/bravo/spgr/tfe,
+TR < 3 s e TE < 10 ms; T2 = 3D, voxel ≤ 1,2 mm, não derivada, descrição com t2/space/cube/vista,
+TE ≥ 60 ms. Séries com indicação de contraste ficam atrás das sem contraste. `--id-map` (CSV
+`folder,subject_id`) troca os nomes das pastas por códigos.
 
 ## Instalação e uso
 

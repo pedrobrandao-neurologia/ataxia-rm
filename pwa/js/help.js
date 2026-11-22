@@ -17,7 +17,17 @@ sct_check_dependencies</code></pre>
 <p>O SUITPy usa bastante memória na etapa de isolamento do cerebelo (no teste, passou de 6 GB por exame);
 rode um sujeito por vez.</p>
 
-<h2>2. Organizar a pasta do projeto</h2>
+<h2>2. Converter os DICOM (se os exames ainda não estão em NIfTI)</h2>
+<p>Com uma subpasta de DICOM por paciente, o comando <code>enigma-dicom</code> converte tudo com o dcm2niix,
+lista as séries e sugere qual é o T1 e qual é o T2 (3D, voxel ≤ 1,2 mm, não derivada; o motivo fica no CSV).</p>
+<pre><code>enigma-dicom scan --dicom /Users/pedrorpb/Downloads/ataxia-andreia-af \
+                  --out /Users/pedrorpb/Downloads/ataxia-andreia-af-enigma
+# confira a coluna "role" (t1 / t2 / vazio) em series_inventory.csv e corrija se preciso
+enigma-dicom convert --out /Users/pedrorpb/Downloads/ataxia-andreia-af-enigma</code></pre>
+<p>O nome do sujeito vem do nome da pasta (só letras e números). Para usar códigos no lugar dos nomes,
+passe <code>--id-map mapa.csv</code> com as colunas <code>folder,subject_id</code>.</p>
+
+<h2>3. Organizar a pasta do projeto</h2>
 <pre><code>meu_projeto/
   input/
     sub01_t1.nii.gz
@@ -28,7 +38,7 @@ rode um sujeito por vez.</p>
 <p>Na aba <b>Projeto</b>, abra a pasta, preencha centro e grupo e clique em
 <b>Salvar config.json e run_enigma.sh</b>.</p>
 
-<h2>3. Rodar</h2>
+<h2>4. Rodar</h2>
 <pre><code>cd meu_projeto
 bash run_enigma.sh check     # confere instalação e arquivos
 bash run_enigma.sh atlas     # baixa o atlas SUIT de lóbulos (uma vez, precisa de internet)
@@ -46,7 +56,7 @@ bash run_enigma.sh etapa1    # cerebelo até a máscara; medula até a segmenta�
 <pre><code>bash run_enigma.sh refazer suit --subjects sub07 --from suit_normalize
 bash run_enigma.sh refazer sct  --subjects sub07 --from sct_register</code></pre>
 
-<h2>4. Resultados</h2>
+<h2>5. Resultados</h2>
 <p>Ficam em <code>deriv/results/</code>: <code>sct_spinal_cord.csv</code> (área e excentricidade por nível),
 <code>suit_rois_long.csv</code> (GM e WM por lóbulo/núcleo do atlas SUIT), <code>suit_native_volumes.csv</code>,
 <code>results.json</code> (lido pela aba Resultados) e <code>deriv/qc/covariance_wd1.csv</code>.
